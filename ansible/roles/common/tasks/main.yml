@@ -1,0 +1,41 @@
+---
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Install base packages
+  ansible.builtin.apt:
+    name: "{{ base_packages }}"
+    state: present
+
+- name: Ensure devops user exists
+  ansible.builtin.user:
+    name: devops
+    shell: /bin/bash
+    groups: sudo
+    append: true
+    create_home: true
+
+- name: Allow devops user to use sudo without password
+  ansible.builtin.copy:
+    dest: /etc/sudoers.d/devops
+    content: "devops ALL=(ALL) NOPASSWD:ALL\n"
+    owner: root
+    group: root
+    mode: "0440"
+
+- name: Configure hosts file for private network
+  ansible.builtin.blockinfile:
+    path: /etc/hosts
+    marker: "# {mark} AUTOMATION ALCHEMY HOSTS"
+    block: |
+      {{ private_network.lb_01 }} lb-01
+      {{ private_network.web_01 }} web-01
+      {{ private_network.web_02 }} web-02
+      {{ private_network.app_01 }} app-01
+      {{ private_network.ci_01 }} ci-01
+
+- name: Set timezone to Europe/Helsinki
+  ansible.builtin.timezone:
+    name: Europe/Helsinki

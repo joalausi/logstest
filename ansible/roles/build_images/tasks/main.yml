@@ -1,0 +1,56 @@
+---
+- name: Create build workspace
+  ansible.builtin.file:
+    path: /opt/automation-alchemy/build
+    state: directory
+    owner: vagrant
+    group: vagrant
+    mode: "0755"
+
+- name: Copy backend source to CI server
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../app/backend/"
+    dest: /opt/automation-alchemy/build/backend/
+    owner: vagrant
+    group: vagrant
+    mode: preserve
+
+- name: Copy frontend source to CI server
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../app/frontend/"
+    dest: /opt/automation-alchemy/build/frontend/
+    owner: vagrant
+    group: vagrant
+    mode: preserve
+
+- name: Build backend image
+  ansible.builtin.command: >
+    docker build
+    -t {{ images.backend }}:{{ image_tag }}
+    /opt/automation-alchemy/build/backend
+  register: backend_build
+  changed_when: true
+
+- name: Build frontend image
+  ansible.builtin.command: >
+    docker build
+    -t {{ images.frontend }}:{{ image_tag }}
+    /opt/automation-alchemy/build/frontend
+  register: frontend_build
+  changed_when: true
+
+- name: Push backend image to local registry
+  ansible.builtin.command: docker push {{ images.backend }}:{{ image_tag }}
+  register: backend_push
+  changed_when: true
+
+- name: Push frontend image to local registry
+  ansible.builtin.command: docker push {{ images.frontend }}:{{ image_tag }}
+  register: frontend_push
+  changed_when: true
+
+- name: Show pushed images
+  ansible.builtin.debug:
+    msg:
+      - "{{ images.backend }}:{{ image_tag }}"
+      - "{{ images.frontend }}:{{ image_tag }}"

@@ -1,0 +1,42 @@
+---
+project_name: automation-alchemy
+
+private_network:
+  lb_01: "192.168.56.10"
+  web_01: "192.168.56.11"
+  web_02: "192.168.56.12"
+  app_01: "192.168.56.13"
+  ci_01: "192.168.56.14"
+
+app_ports:
+  frontend: 8080
+  backend: 3000
+  loadbalancer: 80
+  jenkins: 8080
+  registry: 5000
+
+base_packages:
+  - curl
+  - git
+  - vim
+  - nano
+  - ufw
+  - ca-certificates
+  - gnupg
+  - lsb-release
+  - net-tools
+  - htop
+
+docker_registry:
+  host: "192.168.56.14"
+  port: 5000
+
+image_tag: latest
+
+images:
+  backend: "192.168.56.14:5000/automation-backend"
+  frontend: "192.168.56.14:5000/automation-frontend"
+
+containers:
+  backend: "automation-backend"
+  frontend: "automation-frontend"

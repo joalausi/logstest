@@ -1,0 +1,12 @@
+{
+  "name": "infrastructure-insight-backend",
+  "version": "1.0.0",
+  "description": "Backend metrics API for Infrastructure Insight",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.3"
+  }
+}

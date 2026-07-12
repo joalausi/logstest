@@ -1,0 +1,56 @@
+---
+- name: Allow SSH before enabling firewall
+  community.general.ufw:
+    rule: allow
+    port: "22"
+    proto: tcp
+
+- name: Allow HTTP on load balancer
+  community.general.ufw:
+    rule: allow
+    port: "{{ app_ports.loadbalancer }}"
+    proto: tcp
+  when: inventory_hostname in groups["loadbalancer"]
+
+- name: Allow Jenkins on CI/CD server
+  community.general.ufw:
+    rule: allow
+    port: "{{ app_ports.jenkins }}"
+    proto: tcp
+  when: inventory_hostname in groups["cicd"]
+
+- name: Allow Docker registry on CI/CD server
+  community.general.ufw:
+    rule: allow
+    port: "{{ app_ports.registry }}"
+    proto: tcp
+  when: inventory_hostname in groups["cicd"]
+
+- name: Allow frontend only from load balancer
+  community.general.ufw:
+    rule: allow
+    port: "{{ app_ports.frontend }}"
+    proto: tcp
+    from_ip: "{{ private_network.lb_01 }}"
+  when: inventory_hostname in groups["web"]
+
+- name: Allow backend from web-01
+  community.general.ufw:
+    rule: allow
+    port: "{{ app_ports.backend }}"
+    proto: tcp
+    from_ip: "{{ private_network.web_01 }}"
+  when: inventory_hostname in groups["app"]
+
+- name: Allow backend from web-02
+  community.general.ufw:
+    rule: allow
+    port: "{{ app_ports.backend }}"
+    proto: tcp
+    from_ip: "{{ private_network.web_02 }}"
+  when: inventory_hostname in groups["app"]
+
+- name: Enable UFW
+  community.general.ufw:
+    state: enabled
+    policy: deny

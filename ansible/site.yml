@@ -1,0 +1,49 @@
+---
+- name: Configure all servers
+  hosts: all
+  become: true
+  roles:
+    - common
+    - security
+
+- name: Configure Docker hosts
+  hosts: docker_hosts
+  become: true
+  roles:
+    - docker
+
+- name: Configure local Docker registry
+  hosts: cicd
+  become: true
+  roles:
+    - registry
+
+- name: Configure Jenkins
+  hosts: cicd
+  become: true
+  roles:
+    - jenkins
+
+- name: Build and push application images
+  hosts: cicd
+  become: true
+  roles:
+    - build_images
+
+- name: Deploy backend
+  hosts: app
+  become: true
+  roles:
+    - backend
+
+- name: Deploy frontend
+  hosts: web
+  become: true
+  roles:
+    - frontend
+
+- name: Configure load balancer
+  hosts: loadbalancer
+  become: true
+  roles:
+    - loadbalancer
