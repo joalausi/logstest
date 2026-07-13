@@ -1,7 +1,11 @@
 ---
 - name: Pull backend image
   ansible.builtin.command: docker pull {{ images.backend }}:{{ image_tag }}
+  register: backend_image_pull
   changed_when: true
+  until: backend_image_pull.rc == 0
+  retries: 5
+  delay: 10
 
 - name: Remove old backend container if exists
   ansible.builtin.shell: docker rm -f {{ containers.backend }} || true

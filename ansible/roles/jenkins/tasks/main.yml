@@ -63,10 +63,21 @@
       DISCORD_REVIEW_WEBHOOK_URL={{ lookup('env', 'DISCORD_REVIEW_WEBHOOK_URL') | default('', true) }}
   no_log: true
 
+- name: Pull Jenkins base image
+  ansible.builtin.command: docker pull jenkins/jenkins:lts-jdk21
+  register: jenkins_base_pull
+  changed_when: "'Downloaded newer image' in jenkins_base_pull.stdout or 'Pull complete' in jenkins_base_pull.stdout"
+  until: jenkins_base_pull.rc == 0
+  retries: 5
+  delay: 20
+
 - name: Build custom Jenkins image
   ansible.builtin.command: docker build -t automation-jenkins:latest /opt/automation-alchemy/jenkins
   register: jenkins_build
   changed_when: true
+  until: jenkins_build.rc == 0
+  retries: 3
+  delay: 30
 
 - name: Remove old Jenkins container if exists
   ansible.builtin.shell: docker rm -f automation-jenkins || true

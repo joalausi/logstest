@@ -26,9 +26,9 @@ jobs:
             scm {
               git {
                 remote {
-                  url('https://github.com/joalausi/VMs-test.git')
+                  url('https://gitea.kood.tech/artemchornonoh1/automation-alchemy.git')
                 }
-                branch('*/test')
+                branch('*/main')
               }
             }
             scriptPath('ci/Jenkinsfile')

@@ -89,13 +89,15 @@ PY
                 }
             }
             steps {
-                sh '''
-                    docker build -t ${BACKEND_IMAGE}:${DEPLOY_TAG} app/backend
-                    docker build -t ${FRONTEND_IMAGE}:${DEPLOY_TAG} app/frontend
+                retry(3) {
+                    sh '''
+                        docker build -t ${BACKEND_IMAGE}:${DEPLOY_TAG} app/backend
+                        docker build -t ${FRONTEND_IMAGE}:${DEPLOY_TAG} app/frontend
 
-                    docker tag ${BACKEND_IMAGE}:${DEPLOY_TAG} ${BACKEND_IMAGE}:latest
-                    docker tag ${FRONTEND_IMAGE}:${DEPLOY_TAG} ${FRONTEND_IMAGE}:latest
-                '''
+                        docker tag ${BACKEND_IMAGE}:${DEPLOY_TAG} ${BACKEND_IMAGE}:latest
+                        docker tag ${FRONTEND_IMAGE}:${DEPLOY_TAG} ${FRONTEND_IMAGE}:latest
+                    '''
+                }
             }
         }
 
@@ -106,25 +108,30 @@ PY
                 }
             }
             steps {
-                sh '''
-                    docker push ${BACKEND_IMAGE}:${DEPLOY_TAG}
-                    docker push ${FRONTEND_IMAGE}:${DEPLOY_TAG}
+                retry(3) {
+                    sh '''
+                        docker push ${BACKEND_IMAGE}:${DEPLOY_TAG}
+                        docker push ${FRONTEND_IMAGE}:${DEPLOY_TAG}
 
-                    docker push ${BACKEND_IMAGE}:latest
-                    docker push ${FRONTEND_IMAGE}:latest
-                '''
+                        docker push ${BACKEND_IMAGE}:latest
+                        docker push ${FRONTEND_IMAGE}:latest
+                    '''
+                }
             }
         }
 
         stage('Deploy') {
             steps {
-                sh '''
-                    ansible-playbook \
-                      -i ansible/inventory.ini \
-                      ansible/deploy.yml \
-                      -e image_tag=${DEPLOY_TAG} \
-                      -e ssh_key_dir=${AA_SSH_KEY_DIR}
-                '''
+                retry(2) {
+                    sh '''
+                        ansible-playbook \
+                          -i ansible/inventory.ini \
+                          ansible/deploy.yml \
+                          -e ansible_user=devops \
+                          -e image_tag=${DEPLOY_TAG} \
+                          -e ssh_key_dir=${AA_SSH_KEY_DIR}
+                    '''
+                }
             }
         }
 

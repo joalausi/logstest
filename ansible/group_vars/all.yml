@@ -40,3 +40,8 @@ images:
 containers:
   backend: "automation-backend"
   frontend: "automation-frontend"
+
+devops_user: devops
+devops_password: "{{ lookup('env', 'DEVOPS_PASSWORD') | default('devops', true) }}"
+ansible_become_password: "{{ devops_password }}"
+secure_umask: "027"

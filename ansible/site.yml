@@ -2,13 +2,16 @@
 - name: Configure all servers
   hosts: all
   become: true
+  serial: 1
   roles:
     - common
     - security
+    - ssh_hardening
 
 - name: Configure Docker hosts
   hosts: docker_hosts
   become: true
+  serial: 1
   roles:
     - docker
 
@@ -39,6 +42,7 @@
 - name: Deploy frontend
   hosts: web
   become: true
+  serial: 1
   roles:
     - frontend
 
