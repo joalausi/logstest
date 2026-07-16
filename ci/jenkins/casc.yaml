@@ -28,7 +28,7 @@ jobs:
                 remote {
                   url('https://gitea.kood.tech/artemchornonoh1/automation-alchemy.git')
                 }
-                branch('*/main')
+                branch('*/test')
               }
             }
             scriptPath('ci/Jenkinsfile')
