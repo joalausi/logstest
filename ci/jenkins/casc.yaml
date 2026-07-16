@@ -26,7 +26,7 @@ jobs:
             scm {
               git {
                 remote {
-                  url('https://gitea.kood.tech/artemchornonoh1/automation-alchemy.git')
+                  url('https://github.com/joalausi/logstest.git')
                 }
                 branch('*/test')
               }
