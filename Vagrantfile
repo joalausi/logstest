@@ -11,30 +11,31 @@ Vagrant.configure("2") do |config|
     {
       name: "lb-01",
       ip: "192.168.56.10",
-      memory: 1024,
+      memory: 768,
       cpus: 1
     },
     {
       name: "web-01",
       ip: "192.168.56.11",
-      memory: 1024,
+      memory: 768,
       cpus: 1
     },
     {
       name: "web-02",
       ip: "192.168.56.12",
-      memory: 1024,
+      memory: 768,
       cpus: 1
     },
     {
       name: "app-01",
       ip: "192.168.56.13",
-      memory: 1024,
+      memory: 768,
       cpus: 1
     },
     {
       name: "ci-01",
       ip: "192.168.56.14",
+      # Jenkins, the registry, and Docker builds share this VM.
       memory: 2048,
       cpus: 2
     }

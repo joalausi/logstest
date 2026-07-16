@@ -8,13 +8,15 @@ The project is designed to be reproducible from a clean state using Vagrant, Ans
 
 ## Architecture
 
-| VM | IP | Role |
-|---|---:|---|
-| `lb-01` | `192.168.56.10` | NGINX load balancer |
-| `web-01` | `192.168.56.11` | Frontend container |
-| `web-02` | `192.168.56.12` | Frontend container |
-| `app-01` | `192.168.56.13` | Backend container |
-| `ci-01` | `192.168.56.14` | Jenkins and local Docker Registry |
+| VM | IP | RAM | Role |
+|---|---:|---:|---|
+| `lb-01` | `192.168.56.10` | 768 MB | NGINX load balancer |
+| `web-01` | `192.168.56.11` | 768 MB | Frontend container |
+| `web-02` | `192.168.56.12` | 768 MB | Frontend container |
+| `app-01` | `192.168.56.13` | 768 MB | Backend container |
+| `ci-01` | `192.168.56.14` | 2048 MB | Jenkins and local Docker Registry |
+
+The default VM footprint is 5120 MB (5 GiB). The CI node keeps 2 GiB because Jenkins, the registry, and Docker builds run there; memory is reduced only on the lightweight runtime nodes.
 
 Application traffic flow:
 
