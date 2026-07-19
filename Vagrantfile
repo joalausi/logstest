@@ -8,55 +8,5 @@ Vagrant.configure("2") do |config|
   end
 
   servers = [
-    {
-      name: "lb-01",
-      ip: "192.168.56.10",
-      memory: 768,
-      cpus: 1
-    },
-    {
-      name: "web-01",
-      ip: "192.168.56.11",
-      memory: 768,
-      cpus: 1
-    },
-    {
-      name: "web-02",
-      ip: "192.168.56.12",
-      memory: 768,
-      cpus: 1
-    },
-    {
-      name: "app-01",
-      ip: "192.168.56.13",
-      memory: 768,
-      cpus: 1
-    },
-    {
-      name: "ci-01",
-      ip: "192.168.56.14",
-      # Jenkins, the registry, and Docker builds share this VM.
-      memory: 2048,
-      cpus: 2
-    }
-  ]
-
-  servers.each do |server|
-    config.vm.define server[:name] do |node|
-      node.vm.hostname = server[:name]
-
-      node.vm.network "private_network", ip: server[:ip]
-
-      node.vm.provider "virtualbox" do |vb|
-        vb.name = "automation-alchemy-#{server[:name]}"
-        vb.memory = server[:memory]
-        vb.cpus = server[:cpus]
-      end
-
-      node.vm.provision "shell", inline: <<-SHELL
-        sudo apt-get update -y
-        sudo apt-get install -y python3
-      SHELL
-    end
-  end
-end
+    { name: "lb-01",         ip: "192.168.56.10", memory: 512,  cpus: 1 },
+    { name: "web-01",        ip: "192.168.56.11", memory
