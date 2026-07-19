@@ -51,13 +51,14 @@
 - name: Configure hosts file for private network
   ansible.builtin.blockinfile:
     path: /etc/hosts
-    marker: "# {mark} AUTOMATION ALCHEMY HOSTS"
+    marker: "# {mark} SHERLOCK LOGS HOSTS"
     block: |
       {{ private_network.lb_01 }} lb-01
       {{ private_network.web_01 }} web-01
       {{ private_network.web_02 }} web-02
       {{ private_network.app_01 }} app-01
       {{ private_network.ci_01 }} ci-01
+      {{ private_network.monitoring_01 }} monitoring-01
 
 - name: Set timezone to Europe/Helsinki
   ansible.builtin.timezone:
