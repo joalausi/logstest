@@ -1,4 +1,4 @@
-.PHONY: up status provision ping destroy reload sync-keys registry-test registry-smoke app-test jenkins-url jenkins-logs jenkins-status jenkins-restore rollback image-tags deployed-images discord-test security-check ssh-negative-test
+.PHONY: up status provision ping destroy reload sync-keys registry-test registry-smoke app-test sherlock-test observability monitoring-status monitoring-logs jenkins-url jenkins-logs jenkins-status jenkins-restore rollback image-tags deployed-images discord-test security-check ssh-negative-test
 
 up:
 	vagrant up --no-parallel
@@ -14,6 +14,9 @@ ping:
 
 provision:
 	./scripts/provision.sh
+
+observability:
+	ansible-playbook -i ansible/inventory.ini ansible/observability.yml -e ansible_user=devops
 
 reload:
 	vagrant reload
@@ -31,6 +34,15 @@ registry-smoke:
 
 app-test:
 	./scripts/healthcheck.sh
+
+sherlock-test:
+	./scripts/smoke-test-sherlock.sh
+
+monitoring-status:
+	ansible monitoring -i ansible/inventory.ini -m shell -a "cd /opt/sherlock-logs && docker compose ps"
+
+monitoring-logs:
+	ansible monitoring -i ansible/inventory.ini -m shell -a "cd /opt/sherlock-logs && docker compose logs --tail=100"
 
 jenkins-url:
 	@echo "Jenkins: http://192.168.56.14:8080"
