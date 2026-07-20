@@ -28,6 +28,7 @@
     - web-02
     - app-01
     - ci-01
+    - monitoring-01
 
 - name: Copy Jenkins Dockerfile
   ansible.builtin.copy:
