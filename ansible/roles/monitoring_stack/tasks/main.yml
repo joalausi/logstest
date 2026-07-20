@@ -1,11 +1,16 @@
 ---
 - name: Configure Elasticsearch virtual memory requirement
-  ansible.posix.sysctl:
-    name: vm.max_map_count
-    value: "262144"
-    state: present
-    sysctl_set: true
-    reload: true
+  ansible.builtin.copy:
+    dest: /etc/sysctl.d/99-sherlock-logs.conf
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      vm.max_map_count=262144
+
+- name: Apply Elasticsearch virtual memory requirement
+  ansible.builtin.command: sysctl --system
+  changed_when: true
 
 - name: Create Sherlock Logs directory
   ansible.builtin.file:
@@ -93,7 +98,6 @@
       -X POST "http://127.0.0.1:{{ app_ports.kibana }}/api/saved_objects/_import?overwrite=true" \
       -H "kbn-xsrf: true" \
       --form file=@{{ monitoring_root }}/kibana/saved-objects.ndjson
-  register: kibana_import
   changed_when: true
 
 - name: Display monitoring endpoints
