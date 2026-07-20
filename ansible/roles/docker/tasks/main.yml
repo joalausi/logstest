@@ -3,6 +3,7 @@
   ansible.builtin.apt:
     name:
       - docker.io
+      - docker-compose-v2
       - python3-docker
     state: present
     update_cache: true
@@ -53,6 +54,13 @@
   register: docker_version
   changed_when: false
 
-- name: Show Docker version
+- name: Verify Docker Compose is available
+  ansible.builtin.command: docker compose version
+  register: docker_compose_version
+  changed_when: false
+
+- name: Show Docker versions
   ansible.builtin.debug:
-    msg: "{{ docker_version.stdout }}"
+    msg:
+      - "{{ docker_version.stdout }}"
+      - "{{ docker_compose_version.stdout }}"
