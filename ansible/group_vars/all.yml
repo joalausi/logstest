@@ -25,6 +25,18 @@ app_ports:
   kibana: 5601
   elasticsearch_exporter: 9114
 
+base_packages:
+  - curl
+  - git
+  - vim
+  - nano
+  - ufw
+  - ca-certificates
+  - gnupg
+  - lsb-release
+  - net-tools
+  - htop
+
 docker_registry:
   host: "192.168.56.14"
   port: 5000
