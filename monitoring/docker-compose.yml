@@ -7,6 +7,8 @@ services:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.path=/prometheus
       - --storage.tsdb.retention.time=7d
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "9090:9090"
     volumes:
@@ -88,7 +90,6 @@ services:
     restart: unless-stopped
     command:
       - --es.uri=http://elasticsearch:9200
-      - --es.all
     ports:
       - "9114:9114"
     depends_on:
