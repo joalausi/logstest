@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: cluster-chronicles
+  labels:
+    app.kubernetes.io/name: backend
+    app.kubernetes.io/part-of: cluster-chronicles
+data:
+  PORT: "3000"
+  BACKEND_SERVER_NAME: "cluster-chronicles"

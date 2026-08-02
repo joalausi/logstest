@@ -1,0 +1,236 @@
+pipeline {
+    agent {
+        node {
+            label 'built-in'
+            customWorkspace '/var/jenkins_home/workspace/cluster-chronicles'
+        }
+    }
+
+    parameters {
+        string(
+            name: 'ROLLBACK_TAG',
+            defaultValue: '',
+            description: 'Optional existing Registry tag. Leave empty to build, scan, and deploy.'
+        )
+    }
+
+    environment {
+        APP_NAMESPACE = 'cluster-chronicles'
+        CI_NAMESPACE = 'ci-cd'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Validate Kubernetes Configuration') {
+            steps {
+                sh '''
+                    set -eu
+                    kubectl version --client
+                    kubectl kustomize k8s/overlays/minikube >/tmp/cluster-chronicles-rendered.yaml
+                    test "$(kubectl auth can-i create jobs.batch -n ci-cd)" = yes
+                    test "$(kubectl auth can-i patch deployments.apps -n cluster-chronicles)" = yes
+                '''
+            }
+        }
+
+        stage('Resolve Deployment') {
+            steps {
+                script {
+                    env.REGISTRY = sh(
+                        returnStdout: true,
+                        script: "kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type==\"InternalIP\")].address}'"
+                    ).trim() + ':30500'
+
+                    def rollbackTag = params.ROLLBACK_TAG?.trim()
+                    if (rollbackTag) {
+                        env.DEPLOY_MODE = 'rollback'
+                        env.DEPLOY_TAG = rollbackTag
+                    } else {
+                        env.DEPLOY_MODE = 'deploy'
+                        env.DEPLOY_TAG = env.BUILD_NUMBER
+                    }
+                }
+            }
+        }
+
+        stage('Validate Rollback Tag') {
+            when { expression { env.DEPLOY_MODE == 'rollback' } }
+            steps {
+                sh '''
+                    set -eu
+                    for component in backend frontend; do
+                        curl --fail --silent --show-error --head \
+                          -H 'Accept: application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.v2+json' \
+                          "http://${REGISTRY}/v2/cluster-chronicles-${component}/manifests/${DEPLOY_TAG}" \
+                          >/dev/null
+                    done
+                '''
+            }
+        }
+
+        stage('Build Images with Kaniko') {
+            when { expression { env.DEPLOY_MODE == 'deploy' } }
+            steps {
+                sh '''
+                    set -eu
+                    wait_for_job() {
+                        namespace="$1"
+                        job_name="$2"
+                        timeout_seconds="$3"
+                        deadline=$(( $(date +%s) + timeout_seconds ))
+
+                        while [ "$(date +%s)" -lt "$deadline" ]; do
+                            conditions="$(kubectl -n "$namespace" get job "$job_name" \
+                              -o jsonpath='{range .status.conditions[*]}{.type}={.status}{"\\n"}{end}')"
+                            case "$conditions" in
+                                *Complete=True*) return 0 ;;
+                                *Failed=True*) return 1 ;;
+                            esac
+                            sleep 5
+                        done
+                        return 1
+                    }
+
+                    for component in backend frontend; do
+                        dockerfile=Dockerfile
+                        [ "$component" = frontend ] && dockerfile=Dockerfile.k8s
+                        job="kaniko-${component}-${BUILD_NUMBER}"
+
+                        sed \
+                          -e "s|__JOB_NAME__|${job}|g" \
+                          -e "s|__COMPONENT__|${component}|g" \
+                          -e "s|__DOCKERFILE__|${dockerfile}|g" \
+                          -e "s|__REGISTRY__|${REGISTRY}|g" \
+                          -e "s|__TAG__|${DEPLOY_TAG}|g" \
+                          ci/k8s/kaniko-job.yaml.tpl | kubectl apply -f -
+
+                        if ! wait_for_job "$CI_NAMESPACE" "$job" 1200; then
+                            kubectl -n "$CI_NAMESPACE" logs "job/${job}" --all-containers=true || true
+                            exit 1
+                        fi
+                        kubectl -n "$CI_NAMESPACE" logs "job/${job}"
+                    done
+                '''
+            }
+        }
+
+        stage('Trivy Image Scan') {
+            when { expression { env.DEPLOY_MODE == 'deploy' } }
+            steps {
+                sh '''
+                    set -eu
+                    wait_for_job() {
+                        namespace="$1"
+                        job_name="$2"
+                        timeout_seconds="$3"
+                        deadline=$(( $(date +%s) + timeout_seconds ))
+
+                        while [ "$(date +%s)" -lt "$deadline" ]; do
+                            conditions="$(kubectl -n "$namespace" get job "$job_name" \
+                              -o jsonpath='{range .status.conditions[*]}{.type}={.status}{"\\n"}{end}')"
+                            case "$conditions" in
+                                *Complete=True*) return 0 ;;
+                                *Failed=True*) return 1 ;;
+                            esac
+                            sleep 5
+                        done
+                        return 1
+                    }
+
+                    for component in backend frontend; do
+                        job="trivy-${component}-${BUILD_NUMBER}"
+                        sed \
+                          -e "s|__JOB_NAME__|${job}|g" \
+                          -e "s|__COMPONENT__|${component}|g" \
+                          -e "s|__REGISTRY__|${REGISTRY}|g" \
+                          -e "s|__TAG__|${DEPLOY_TAG}|g" \
+                          ci/k8s/trivy-job.yaml.tpl | kubectl apply -f -
+
+                        if ! wait_for_job "$CI_NAMESPACE" "$job" 900; then
+                            kubectl -n "$CI_NAMESPACE" logs "job/${job}" --all-containers=true || true
+                            exit 1
+                        fi
+                        kubectl -n "$CI_NAMESPACE" logs "job/${job}"
+                    done
+                '''
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                sh '''
+                    set -eu
+                    kubectl -n "$APP_NAMESPACE" set image deployment/backend \
+                      "backend=${REGISTRY}/cluster-chronicles-backend:${DEPLOY_TAG}"
+                    kubectl -n "$APP_NAMESPACE" set image deployment/frontend \
+                      "frontend=${REGISTRY}/cluster-chronicles-frontend:${DEPLOY_TAG}"
+                    kubectl -n "$APP_NAMESPACE" annotate deployment backend frontend \
+                      "cluster-chronicles/build=${DEPLOY_TAG}" --overwrite
+                    kubectl -n "$APP_NAMESPACE" rollout status deployment/backend --timeout=5m
+                    kubectl -n "$APP_NAMESPACE" rollout status deployment/frontend --timeout=5m
+                '''
+            }
+        }
+
+        stage('Smoke Test') {
+            steps {
+                sh '''
+                    set -eu
+                    pod="pipeline-smoke-${BUILD_NUMBER}"
+                    kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ${pod}
+  namespace: ${CI_NAMESPACE}
+  labels:
+    app.kubernetes.io/name: pipeline-smoke
+    cluster-chronicles/build: "${BUILD_NUMBER}"
+spec:
+  restartPolicy: Never
+  automountServiceAccountToken: false
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 100
+    runAsGroup: 101
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: smoke
+      image: curlimages/curl:8.15.0
+      command: ["curl"]
+      args: ["--fail", "--silent", "--show-error", "--max-time", "30", "http://frontend.cluster-chronicles.svc.cluster.local/api/health"]
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop: ["ALL"]
+EOF
+                    if ! kubectl -n "$CI_NAMESPACE" wait --for=jsonpath='{.status.phase}'=Succeeded \
+                      "pod/${pod}" --timeout=3m; then
+                        kubectl -n "$CI_NAMESPACE" logs "$pod" || true
+                        exit 1
+                    fi
+                    kubectl -n "$CI_NAMESPACE" logs "$pod"
+                    kubectl -n "$CI_NAMESPACE" delete pod "$pod" --wait=false
+                '''
+            }
+        }
+    }
+
+    post {
+        always {
+            sh '''
+                kubectl -n "$CI_NAMESPACE" delete jobs \
+                  -l "cluster-chronicles/build=${BUILD_NUMBER}" --ignore-not-found=true --wait=false || true
+                kubectl -n "$CI_NAMESPACE" delete pod "pipeline-smoke-${BUILD_NUMBER}" \
+                  --ignore-not-found=true --wait=false || true
+            '''
+        }
+    }
+}

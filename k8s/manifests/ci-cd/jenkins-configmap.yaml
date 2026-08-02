@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jenkins-casc
+  namespace: ci-cd
+  labels:
+    app.kubernetes.io/name: jenkins
+    app.kubernetes.io/part-of: cluster-chronicles
+data:
+  jenkins.yaml: |
+    jenkins:
+      systemMessage: "Cluster Chronicles Jenkins controller"
+      numExecutors: 1
+      securityRealm:
+        local:
+          allowsSignup: false
+          users:
+            - id: "admin"
+              password: "${JENKINS_ADMIN_PASSWORD}"
+      authorizationStrategy:
+        loggedInUsersCanDoAnything:
+          allowAnonymousRead: false
+    unclassified:
+      location:
+        url: "http://jenkins.cluster-chronicles.local/"
+    jobs:
+      - script: >
+          pipelineJob('cluster-chronicles-deploy') {
+            description('Builds with Kaniko, scans with Trivy, and deploys to Minikube.')
+            definition {
+              cpsScm {
+                scm {
+                  git {
+                    remote { url('${JENKINS_GIT_URL}') }
+                    branch('${JENKINS_GIT_BRANCH}')
+                  }
+                }
+                scriptPath('ci/Jenkinsfile.k8s')
+              }
+            }
+          }

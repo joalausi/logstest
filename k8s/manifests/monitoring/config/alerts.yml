@@ -1,0 +1,96 @@
+groups:
+  - name: node-alerts
+    rules:
+      - alert: NodeHighCPU
+        expr: 100 - avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Node CPU usage exceeds 80%"
+          description: "CPU usage on {{ $labels.instance }} has exceeded 80% for five minutes."
+
+      - alert: NodeLowDiskSpace
+        expr: node_filesystem_avail_bytes{fstype!~"tmpfs|overlay|squashfs"} / node_filesystem_size_bytes{fstype!~"tmpfs|overlay|squashfs"} < 0.20
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Node disk space is below 20%"
+          description: "Filesystem {{ $labels.mountpoint }} on {{ $labels.instance }} has less than 20% free."
+
+      - alert: NodeHighMemory
+        expr: (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) > 0.90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Node memory usage exceeds 90%"
+          description: "Memory usage on {{ $labels.instance }} has exceeded 90% for five minutes."
+
+  - name: pod-container-alerts
+    rules:
+      - alert: PodRestartingFrequently
+        expr: increase(kube_pod_container_status_restarts_total[15m]) > 3
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Pod restarted more than three times in 15 minutes"
+          description: "{{ $labels.namespace }}/{{ $labels.pod }} is restarting frequently."
+
+      - alert: ContainerHighMemory
+        expr: container_memory_working_set_bytes{container!="",image!=""} / on(namespace,pod,container) group_left kube_pod_container_resource_limits{resource="memory",unit="byte"} > 0.80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container memory exceeds 80% of its limit"
+          description: "{{ $labels.namespace }}/{{ $labels.pod }}/{{ $labels.container }} is close to its memory limit."
+
+      - alert: PodPendingTooLong
+        expr: kube_pod_status_phase{phase="Pending"} == 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Pod has remained Pending for five minutes"
+          description: "{{ $labels.namespace }}/{{ $labels.pod }} cannot be scheduled or started."
+
+  - name: cluster-alerts
+    rules:
+      - alert: KubernetesAPIServerDown
+        expr: up{job="kubernetes-apiservers"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Kubernetes API server is unreachable"
+
+  - name: logging-alerts
+    rules:
+      - alert: ElasticsearchClusterNotGreen
+        expr: elasticsearch_cluster_health_status{color="green"} != 1
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Elasticsearch cluster status is yellow or red"
+
+      - alert: FluentBitLogCollectionErrors
+        expr: increase(fluentbit_output_errors_total[5m]) > 0 or increase(fluentbit_output_retries_failed_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Fluent Bit is reporting output errors"
+
+  - name: application-alerts
+    rules:
+      - alert: ApplicationHighErrorRate
+        expr: sum(rate(http_requests_total{status=~"5.."}[5m])) / clamp_min(sum(rate(http_requests_total[5m])), 0.001) > 0.05
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Application HTTP 5xx rate exceeds 5%"

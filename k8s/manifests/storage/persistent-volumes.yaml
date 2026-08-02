@@ -1,0 +1,89 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: cluster-chronicles-static
+  labels:
+    app.kubernetes.io/part-of: cluster-chronicles
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: Immediate
+reclaimPolicy: Retain
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: cluster-chronicles-jenkins
+  labels:
+    app.kubernetes.io/part-of: cluster-chronicles
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes: ["ReadWriteOnce"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: cluster-chronicles-static
+  hostPath:
+    path: /data/cluster-chronicles/jenkins
+    type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: cluster-chronicles-registry
+  labels:
+    app.kubernetes.io/part-of: cluster-chronicles
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes: ["ReadWriteOnce"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: cluster-chronicles-static
+  hostPath:
+    path: /data/cluster-chronicles/registry
+    type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: cluster-chronicles-prometheus
+  labels:
+    app.kubernetes.io/part-of: cluster-chronicles
+spec:
+  capacity:
+    storage: 6Gi
+  accessModes: ["ReadWriteOnce"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: cluster-chronicles-static
+  hostPath:
+    path: /data/cluster-chronicles/prometheus
+    type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: cluster-chronicles-grafana
+  labels:
+    app.kubernetes.io/part-of: cluster-chronicles
+spec:
+  capacity:
+    storage: 2Gi
+  accessModes: ["ReadWriteOnce"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: cluster-chronicles-static
+  hostPath:
+    path: /data/cluster-chronicles/grafana
+    type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: cluster-chronicles-elasticsearch
+  labels:
+    app.kubernetes.io/part-of: cluster-chronicles
+spec:
+  capacity:
+    storage: 12Gi
+  accessModes: ["ReadWriteOnce"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: cluster-chronicles-static
+  hostPath:
+    path: /data/cluster-chronicles/elasticsearch
+    type: DirectoryOrCreate

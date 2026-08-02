@@ -52,7 +52,9 @@ containers:
   frontend: "automation-frontend"
 
 monitoring_root: /opt/sherlock-logs
+monitoring_docker_subnet: "172.30.0.0/24"
 prometheus_retention: 7d
+cadvisor_version: "v0.57.0"
 
 # Optional external notification receiver used by Alertmanager.
 discord_alert_webhook_url: "{{ lookup('env', 'DISCORD_ALERT_WEBHOOK_URL') | default('', true) }}"

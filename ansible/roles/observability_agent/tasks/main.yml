@@ -81,12 +81,15 @@
     docker run -d
     --name cadvisor
     --restart unless-stopped
+    --privileged
+    --device=/dev/kmsg
     -p {{ app_ports.cadvisor }}:8080
     --volume=/:/rootfs:ro
     --volume=/var/run:/var/run:ro
     --volume=/sys:/sys:ro
     --volume=/var/lib/docker/:/var/lib/docker:ro
     --volume=/dev/disk/:/dev/disk:ro
-    gcr.io/cadvisor/cadvisor:v0.52.1
+    ghcr.io/google/cadvisor:{{ cadvisor_version }}
+    --disable_metrics=disk
   changed_when: true
   when: inventory_hostname in groups['docker_hosts']

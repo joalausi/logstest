@@ -1,0 +1,107 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: application
+  namespace: cluster-chronicles
+  labels:
+    app.kubernetes.io/part-of: cluster-chronicles
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "5"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "30"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: cluster-chronicles.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: jenkins
+  namespace: ci-cd
+  labels:
+    app.kubernetes.io/part-of: cluster-chronicles
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: jenkins.cluster-chronicles.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: jenkins
+                port:
+                  number: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana
+  namespace: observability
+  labels:
+    app.kubernetes.io/part-of: cluster-chronicles
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: grafana.cluster-chronicles.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: grafana
+                port:
+                  number: 3000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: prometheus
+  namespace: observability
+  labels:
+    app.kubernetes.io/part-of: cluster-chronicles
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: prometheus.cluster-chronicles.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: prometheus
+                port:
+                  number: 9090
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kibana
+  namespace: logging
+  labels:
+    app.kubernetes.io/part-of: cluster-chronicles
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: kibana.cluster-chronicles.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kibana
+                port:
+                  number: 5601

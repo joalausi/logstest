@@ -1,0 +1,35 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+generatorOptions:
+  disableNameSuffixHash: true
+configMapGenerator:
+  - name: prometheus-config
+    namespace: observability
+    files:
+      - prometheus.yml=config/prometheus.yml
+      - alerts.yml=config/alerts.yml
+  - name: alertmanager-config
+    namespace: observability
+    files:
+      - alertmanager.yml=config/alertmanager.yml
+  - name: grafana-datasource
+    namespace: observability
+    files:
+      - datasource.yaml=config/grafana-datasource.yaml
+  - name: grafana-dashboard-provider
+    namespace: observability
+    files:
+      - dashboards.yaml=config/grafana-dashboard-provider.yaml
+  - name: grafana-dashboards
+    namespace: observability
+    files:
+      - cluster-performance.json=dashboards/cluster-performance.json
+      - pod-container-performance.json=dashboards/pod-container-performance.json
+      - application-performance.json=dashboards/application-performance.json
+resources:
+  - prometheus-rbac.yaml
+  - prometheus.yaml
+  - alertmanager.yaml
+  - grafana.yaml
+  - kube-state-metrics.yaml
+  - node-exporter.yaml

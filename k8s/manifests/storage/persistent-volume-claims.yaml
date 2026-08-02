@@ -1,0 +1,74 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jenkins-home
+  namespace: ci-cd
+  labels:
+    app.kubernetes.io/part-of: cluster-chronicles
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: cluster-chronicles-static
+  volumeName: cluster-chronicles-jenkins
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: registry-data
+  namespace: ci-cd
+  labels:
+    app.kubernetes.io/part-of: cluster-chronicles
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: cluster-chronicles-static
+  volumeName: cluster-chronicles-registry
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-data
+  namespace: observability
+  labels:
+    app.kubernetes.io/part-of: cluster-chronicles
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: cluster-chronicles-static
+  volumeName: cluster-chronicles-prometheus
+  resources:
+    requests:
+      storage: 6Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grafana-data
+  namespace: observability
+  labels:
+    app.kubernetes.io/part-of: cluster-chronicles
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: cluster-chronicles-static
+  volumeName: cluster-chronicles-grafana
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: elasticsearch-data
+  namespace: logging
+  labels:
+    app.kubernetes.io/part-of: cluster-chronicles
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: cluster-chronicles-static
+  volumeName: cluster-chronicles-elasticsearch
+  resources:
+    requests:
+      storage: 12Gi

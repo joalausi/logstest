@@ -87,3 +87,27 @@ ssh-negative-test:
 
 discord-test:
 	./scripts/notify-discord.sh "Automation Alchemy Discord notification test"
+.PHONY: cluster-bootstrap cluster-registry cluster-deploy cluster-test cluster-observability-test cluster-load cluster-status
+
+cluster-bootstrap:
+	bash scripts/k8s/bootstrap-optiplex.sh
+
+cluster-registry:
+	bash scripts/k8s/configure-registry.sh
+
+cluster-deploy:
+	bash scripts/k8s/deploy.sh
+
+cluster-test:
+	bash scripts/k8s/smoke-test.sh
+
+cluster-observability-test:
+	bash scripts/k8s/verify-observability.sh
+
+cluster-load:
+	bash scripts/k8s/load-test-hpa.sh
+
+cluster-status:
+	kubectl get pods -A
+	kubectl get pv,pvc -A
+	kubectl get ingress -A

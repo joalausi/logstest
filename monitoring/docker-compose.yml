@@ -100,3 +100,9 @@ volumes:
   alertmanager_data:
   grafana_data:
   elasticsearch_data:
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24

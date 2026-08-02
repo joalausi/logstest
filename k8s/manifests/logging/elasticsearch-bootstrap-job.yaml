@@ -1,0 +1,60 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: elasticsearch-bootstrap
+  namespace: logging
+  labels:
+    app.kubernetes.io/name: elasticsearch-bootstrap
+    app.kubernetes.io/part-of: cluster-chronicles
+spec:
+  backoffLimit: 10
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: elasticsearch-bootstrap
+        app.kubernetes.io/part-of: cluster-chronicles
+    spec:
+      restartPolicy: OnFailure
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 100
+        runAsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: bootstrap
+          image: curlimages/curl:8.15.0
+          command:
+            - sh
+            - -ec
+            - |
+              elasticsearch_url=http://elasticsearch.logging.svc.cluster.local:9200
+              until curl -fsS "${elasticsearch_url}/_cluster/health" >/dev/null; do
+                echo "Waiting for Elasticsearch..."
+                sleep 10
+              done
+              curl -fsS -X PUT "${elasticsearch_url}/_index_template/cluster-logs" \
+                -H 'Content-Type: application/json' \
+                -d '{"index_patterns":["cluster-logs-*"],"template":{"settings":{"number_of_shards":1,"number_of_replicas":0}}}'
+              curl -fsS -X PUT "${elasticsearch_url}/cluster-logs-*/_settings" \
+                -H 'Content-Type: application/json' \
+                -d '{"index":{"number_of_replicas":0}}' || true
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}

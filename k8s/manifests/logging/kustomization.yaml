@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+generatorOptions:
+  disableNameSuffixHash: true
+configMapGenerator:
+  - name: fluent-bit-config
+    namespace: logging
+    files:
+      - fluent-bit.conf=config/fluent-bit.conf
+  - name: kibana-saved-objects
+    namespace: logging
+    files:
+      - saved-objects.ndjson=config/saved-objects.ndjson
+resources:
+  - elasticsearch.yaml
+  - elasticsearch-bootstrap-job.yaml
+  - fluent-bit.yaml
+  - kibana.yaml
+  - elasticsearch-exporter.yaml
+  - kibana-saved-objects-job.yaml

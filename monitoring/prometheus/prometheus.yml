@@ -43,6 +43,5 @@ scrape_configs:
       - targets: ["192.168.56.13:3000"]
 
   - job_name: elasticsearch
-    scrape_timeout: 30s
     static_configs:
       - targets: ["elasticsearch-exporter:9114"]

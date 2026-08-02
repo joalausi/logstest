@@ -1,0 +1,63 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kibana-saved-objects
+  namespace: logging
+  labels:
+    app.kubernetes.io/name: kibana-saved-objects
+    app.kubernetes.io/part-of: cluster-chronicles
+spec:
+  backoffLimit: 10
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: kibana-saved-objects
+        app.kubernetes.io/part-of: cluster-chronicles
+    spec:
+      restartPolicy: OnFailure
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 100
+        runAsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: importer
+          image: curlimages/curl:8.15.0
+          command:
+            - sh
+            - -c
+            - |
+              until curl -fsS http://kibana.logging.svc.cluster.local:5601/api/status >/dev/null; do
+                echo "Waiting for Kibana..."
+                sleep 10
+              done
+              curl -fsS -X POST \
+                http://kibana.logging.svc.cluster.local:5601/api/saved_objects/_import?overwrite=true \
+                -H 'kbn-xsrf: true' \
+                --form file=@/objects/saved-objects.ndjson
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: objects
+              mountPath: /objects
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: objects
+          configMap:
+            name: kibana-saved-objects
+        - name: tmp
+          emptyDir: {}

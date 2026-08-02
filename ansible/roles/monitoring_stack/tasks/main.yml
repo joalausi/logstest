@@ -28,6 +28,47 @@
     group: devops
     mode: preserve
 
+- name: Find monitoring configuration directories
+  ansible.builtin.find:
+    paths: "{{ monitoring_root }}"
+    file_type: directory
+    recurse: true
+  register: monitoring_config_directories
+
+- name: Make monitoring configuration directories traversable by containers
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    owner: devops
+    group: devops
+    mode: "0755"
+  loop: "{{ monitoring_config_directories.files }}"
+  loop_control:
+    label: "{{ item.path }}"
+
+- name: Find monitoring configuration files
+  ansible.builtin.find:
+    paths: "{{ monitoring_root }}"
+    file_type: file
+    recurse: true
+  register: monitoring_config_files
+
+- name: Make monitoring configuration files readable by containers
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    owner: devops
+    group: devops
+    mode: "0644"
+  loop: "{{ monitoring_config_files.files }}"
+  loop_control:
+    label: "{{ item.path }}"
+
+- name: Allow Prometheus container network to scrape host Node Exporter
+  community.general.ufw:
+    rule: allow
+    port: "{{ app_ports.node_exporter }}"
+    proto: tcp
+    from_ip: "{{ monitoring_docker_subnet }}"
+
 - name: Validate monitoring Compose configuration
   ansible.builtin.command:
     cmd: docker compose config

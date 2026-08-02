@@ -1,0 +1,13 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: frontend
+  namespace: cluster-chronicles
+  labels:
+    app.kubernetes.io/name: frontend
+    app.kubernetes.io/part-of: cluster-chronicles
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: frontend
